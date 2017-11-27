@@ -1,0 +1,22 @@
+---
+title: "Personal Activity Analysis"
+author: "Chris Sirico"
+date: "11/27/2017"
+output: 
+  github_document:
+    html_preview: true
+    code_folding: hide
+---
+<!-- ☝️Trying above YAML for updated github-friendly knitr output; code_folding might not work; might have to use:
+    smart: false
+    if pandoc causes problems -->
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.retina = 4, warning = FALSE, message = FALSE)
+activity <- readr::read_csv("activity.csv") # read in data as tibble
+
+# "steps" is number of steps measured in that interval
+# "data" is the date in form YYYY-MM-DD
+# "interval" has minutes in the rightmost digits and hours in leftmost digits
+
+```
+I'm just gonna save and push this baby one time so I have an original commit. I'll come back and do something meaningful later.
