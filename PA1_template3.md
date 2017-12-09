@@ -324,23 +324,30 @@ Here is step activity plotted chronologically along duration of study:
 ``` r
 # TIME SERIES PLOT
 
-steps_seq <- activity
+steps_seq <- activity_na_rm
 steps_seq <- tibble::rowid_to_column(steps_seq, "ID")
+steps_seq <- steps_seq %>%
+  mutate(is.weekend = ifelse(day =="Saturday" | day =="Sunday","weekend","weekday"),
+    time = lubridate::ymd_hm(paste0("2012-1-1",
+                                    '"',
+                                    as.character(hour),
+                                    ":",
+                                    as.character(minute),
+                                    '"')
+                             )
+    )
 
-ggplot(data = steps_seq, aes(ID, steps)) + 
-  geom_line() +
-  labs(title = "Time series over 2-month study",
-       subtitle = "Data were missing on 8 days",
-  x = "number of steps/day",
-  y = "number of occurences"
+ggplot(data = steps_seq, aes(time, steps)) + 
+  geom_line(linejoin="mitre", size=.8) +
+  labs(title = "Time series: 24-hr plot of interval averages",
+  x = "Hour of day",
+  y = "Steps"
 ) +
-  scale_x_discrete(breaks = c(seq(from = 0, to = max(steps_seq$ID), by = 288))
-      # labels = day_labels  # still haven't figured out how to customize labels
-                   ) +
+  scale_x_datetime(date_breaks = "2 hours", date_labels = "%I:%M %p") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5))
 ```
 
-<img src="PA1_template3_files/figure-markdown_github-ascii_identifiers/long-time-series-1.png" width="672" />
+<img src="PA1_template3_files/figure-markdown_github-ascii_identifiers/time-series-1.png" width="672" />
 
 And here is a comparison of weekday versus weekend `steps` behavior:
 
