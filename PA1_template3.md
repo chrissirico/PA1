@@ -3,6 +3,72 @@ Personal Activity Analysis
 Chris Sirico
 11/27/2017
 
+``` r
+knitr::opts_chunk$set(echo=TRUE, fig.retina=4, warning=FALSE, message=FALSE)
+activity <- readr::read_csv("activity.csv") # read in data as tibble
+```
+
+    ## Parsed with column specification:
+    ## cols(
+    ##   steps = col_integer(),
+    ##   date = col_date(format = ""),
+    ##   interval = col_integer()
+    ## )
+
+``` r
+library(dplyr)
+```
+
+    ## Warning: package 'dplyr' was built under R version 3.4.2
+
+    ## 
+    ## Attaching package: 'dplyr'
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     filter, lag
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     intersect, setdiff, setequal, union
+
+``` r
+library(ggplot2)
+
+# "steps" is number of steps measured in that interval
+# "data" is the date in form YYYY-MM-DD
+# "interval" has minutes in the rightmost digits and hours in leftmost digits
+# let's create a day-of-week, hour and minute column:
+activity <- mutate(activity,
+              day = weekdays(date),
+              hour = interval %/% 100,
+              minute = interval %% 100)
+
+# activity$date %>% max() - activity$date %>% min()
+#> Time difference of 60 days (length of the study)
+
+# ASSIGNMENT
+
+# - Code for reading in the dataset and/or processing the data
+# - Histogram of the total number of steps taken each day
+# - Mean and median number of steps taken each day
+# - Time series plot of the average number of steps taken
+    # continuous, start-to-end
+    # by weekday, cumulative
+# - The 5-minute interval that, on average, contains the maximum number of steps
+    # by weekday
+    # by day
+# • Code to describe and show a strategy for imputing missing data
+    # remove rows w/ missing data for some steps; where is this problematic?
+    # take average by weekday and interval of day to impute for others
+# • Histogram of the total number of steps taken each day after missing values
+# are imputed; kind of already done
+# • Panel plot comparing the average number of steps taken per 5-minute interval
+# across weekdays and weekends
+# - All of the R code needed to reproduce the results (numbers, plots, etc.) in
+# the report
+```
+
 This is an exploration of pedometer data collected on one subject over a 2-month study.
 
 A preview of the data:

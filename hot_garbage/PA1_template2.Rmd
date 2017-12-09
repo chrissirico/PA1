@@ -6,7 +6,7 @@ output:
   github_document:
     html_preview: true
 ---
-```{r setup}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo=TRUE, fig.retina=4, warning=FALSE, message=FALSE)
 activity <- readr::read_csv("activity.csv") # read in data as tibble
 library(dplyr)
@@ -48,19 +48,19 @@ activity <- mutate(activity,
 
 This is an exploration of pedometer data collected on one subject over a 2-month study.
 
-A preview of the data:
+Let's preview our data.
 
-```{r preview, echo = TRUE}
+```{r preview, echo = "FALSE"}
 print(activity)
 ```
 
 The variables are `date`, 5-minute `interval` (as a time of day), and `steps` taken per interval. A day-of-week column has also been added (`day`), and interval has been separated into additional `hour` and `minute` columns.
 
-As can be observed above, some `step` data is missing. `r sum(is.na(activity$steps))` `steps` values (`r scales::percent(mean(is.na(activity$steps)))` of data) are missing. A look at the dataset reveals 8 dates for which data are completely missing, but there are no missing values outside those dates.
+`r scales::percent(mean(is.na(activity$steps)))` of `steps` data are missing, or `r sum(is.na(activity$steps))` values. A look at the data reveals 8 dates for which those data are completely missing, but there are no missing values outside those dates.
 
-Those dates can simply be removed from the dataset for most of this exploration. This will still render accurate means, medians, and average `step` counts per day. 
+Those dates can simply be removed from the dataset for most of this exploration. This will still render accurate means, medians and average `step` counts per day. 
 
-Any analysis that involves a count and a day of week (e.g. number of steps taken on Tuesdays), however, would require imputation. A possible option for imputation in such case would be the median `step` value taken by the corresponding `interval` (time of day) and day of week. See the `impute` chunk below for code example.
+Any analysis that involves a count and day-of-week (e.g. number of steps taken on Tuesdays), however, would require imputation. A possible option for imputation in such case would be the median `step` value taken by the corresponding interval (time of day) and day-of-week. See the `impute` chunk for code to carry out the imputation.
 
 ```{r na-rm}
 # find days with missing data
@@ -104,6 +104,12 @@ activity_medians <- activity_na_rm %>%
 # number of missing values
 missing_total <- sum(is.na(activity$steps))
 
+# getting an error when I subset:
+#> 1: Unknown or uninitialised column: 'steps'.
+# trying this to fix that
+# col_names <- names(imputed)
+# names(imputed) <- col_names
+
 # find first missing value
 na_start<-(nrow(imputed)-missing_total+1)
 
@@ -116,41 +122,30 @@ na_start<-(nrow(imputed)-missing_total+1)
 for (i in seq(na_start, nrow(imputed), by = 288)){
   for (j in seq(0, 287)){
     imputed$steps[i+j] <- activity_medians[[(j+1),(imputed$day[(i+j)])]]
+    
   }
 }
 ```
 
-It is also worth noting that the dates October 2 and November 15 have miniscule `steps` totals relative to the next lowest days. Both dates follow dates with missing values, and both have their total steps occurring within ten-minute windows. This exploration will treat these dates as valid data; however, follow-up would be warranted to see if the subject failed to wear the tracking device. Then the dates could be discarded or the missing intervals imputed. 
-
-Total steps per day, sorted ascending to contrast these and other dates:
-```{r low-days, echo = TRUE}
-activity_na_rm %>%
-  group_by(date) %>%
-  summarise(steps = sum(steps)) %>%
-  arrange(steps)
-```
-  
-Below we see summary statistics for our data, without and with zero values removed. These show the trend across all intervals as well as the trend in active intervals.
-```{r summary, echo = TRUE}
+Below we see summary statistics for our data with and without zero values removed.
+```{r summary}
 activity_na_rm$steps %>% summary()
 
 # removing 0 step rows
-zeroless <- activity_na_rm %>% 
+activity_na_rm %>% 
   filter(steps != 0) %>%
-  select(steps)
-summary(zeroless$steps)
+  select(steps) %>%
+  summary()
 ```
-The maximum steps recorded in a 5-minute interval is 806. That's 2.68 steps per second, on par with a tempo of [161 beats per minute](https://www.youtube.com/watch?v=E2X4Fv4FjE4). That would seem to be faster than a steady jog and perhaps just short of a sprint--quite high-intensity exercise if triggered by the subject's movement. While entirely plausible, it is also possible these high values were caused by the motion of a bumpy vehicle or other outside source.
+It's interesting to note that the maximum number of steps in a 5-minute interval is 806. That's 2.68 steps per second, on par with a tempo of [161 beats per minute](https://www.youtube.com/watch?v=E2X4Fv4FjE4). That would seem to be faster than a steady jog and perhaps just short of a sprint. That would seem to be quite high-intensity exercise, regardless of the specific activity.
 
 ```{r max}
 arrange(activity, desc(steps))
 ```
+Looking at the highest number of steps per interval, it seems like our subject works out early in the morning.
 
-Looking at the highest number of steps per interval, it also appears the subject exercises in the mornings.
 
-About a quarter of intervals recorded were active:
-
-```{r prop, fig.width=8, fig.height=3, echo = TRUE}
+```{r prop, fig.width=6, fig.height=2, echo = "FALSE"}
 # show proportion of movement to sedentary intervals
 # Stacked barplot -- pretty hacky way of getting there
 
@@ -236,7 +231,7 @@ scale_y_continuous(breaks = c(1:10),
                    minor_breaks = NULL) +
  geom_text(data = tibble::tibble(steps = c(0, max(byday$steps)),
                 date = c(1,2)),
-             aes(y=6,
+             aes(y=9,
                x=13000,
                label=stringr::str_c("Median:\n", as.character(median(byday$steps, na.rm = T)))
             ),
@@ -244,8 +239,8 @@ scale_y_continuous(breaks = c(1:10),
            ) +
 geom_text(data = tibble::tibble(steps = c(0, max(byday$steps)),
                 date = c(1,2)),
-             aes(y=6,
-               x=7000,
+             aes(y=5,
+               x=6000,
                label=stringr::str_c("Mean:\n", as.character(round(mean(byday$steps, na.rm = T), 2)))
             ),
            color = "#E7655C"
@@ -298,50 +293,48 @@ geom_text(data = tibble::tibble(steps = c(0, max(byday2$steps)),
   theme(legend.position="none")
 
 ```
-The results are similar.
-Note that the study's subject achieves the expert-recommended [10,000 steps per day](https://www.ncbi.nlm.nih.gov/pubmed/11131268) on most days.
 
-Here is step activity plotted chronologically along duration of study:
+The study's subject achieves the recommended [10,000 steps](https://www.ncbi.nlm.nih.gov/pubmed/11131268) on most days.
 
-```{r time-series, echo = TRUE}
-# TIME SERIES PLOT
-
-steps_seq <- activity_na_rm
+```{r long-time-series}
+steps_seq <- activity
 steps_seq <- tibble::rowid_to_column(steps_seq, "ID")
-steps_seq <- steps_seq %>%
-  mutate(is.weekend = ifelse(day =="Saturday" | day =="Sunday","weekend","weekday"),
-    time = lubridate::ymd_hm(paste0("2012-1-1",
-                                    '"',
-                                    as.character(hour),
-                                    ":",
-                                    as.character(minute),
-                                    '"')
-                             )
-    )
 
-ggplot(data = steps_seq, aes(time, steps)) + 
-  geom_line(linejoin="mitre", size=.8) +
-  labs(title = "Time series: 24-hr plot of interval averages",
-  x = "Hour of day",
-  y = "Steps"
+# steps_seq <- steps_seq %>%
+#   mutate(hour = interval %/% 100,
+#          minute = interval %% 60)
+
+# I want to set up x axis tick labels with the number of days instead of intervals
+# 288 5-minute intervals = 1 day
+# Not sure how to get this to work
+
+# intervals <- as.character(seq(from = 0, to = max(steps_seq$ID), by = 288))
+# days <- as.character(seq(from = 0, to = 61, by = 1))
+# day_labels <- vector("character", 62)
+# day_labels <- for(i in seq_along(day_labels)) {
+#   day_labels[i] <- stringr::str_c("'", intervals[i], "'", " = ", "'", days[i], "'")
+# }
+
+#  output should look like:
+  # c("0" = "1", "288" = "2", "576" = "3", ...)
+
+ggplot(data = steps_seq, aes(ID, steps)) + 
+  geom_line() +
+  labs(title = "Time series over 2-month study",
+       subtitle = "Data were missing on 8 days",
+  x = "number of steps/day",
+  y = "number of occurences"
 ) +
-  scale_x_datetime(date_breaks = "2 hours", date_labels = "%I:%M %p") +
+  scale_x_discrete(breaks = c(seq(from = 0, to = max(steps_seq$ID), by = 288))
+      # labels = day_labels  # still haven't figured out how to customize labels
+                   ) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5))
 ```
 
-And here is a comparison of weekday versus weekend `steps` behavior:
-
-```{r weekend, echo = TRUE}
+```{r weekend}
 activity_na_rm %>%
-mutate(is.weekend = ifelse(day =="Saturday" | day =="Sunday","weekend","weekday"),
-    time = lubridate::ymd_hm(paste0("2012-1-1",
-                                    '"',
-                                    as.character(hour),
-                                    ":",
-                                    as.character(minute),
-                                    '"')
-                             )
-  ) %>%
+  mutate(is.weekend = ifelse(day =="Saturday" | day =="Sunday", "weekend", "weekday"),
+         time = lubridate::ymd_hm(paste0("2012-1-1", '"',as.character(hour),":", as.character(minute), '"'))) %>%
 
 ggplot(aes(time,steps)) +
   geom_line() +
@@ -350,4 +343,71 @@ ggplot(aes(time,steps)) +
   #  vertical x labels
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) +
   labs(title="More steps, earlier, on weekdays vs. weekends")
+  
+
+```
+
+
+```{r histo-f-ckup, include=FALSE}
+# excluding this chunk since it doesn't track days, according to the prompt
+
+# zero-less
+
+zeroless <- activity %>%
+filter(steps != 0)
+
+ggplot(zeroless) +
+geom_histogram(aes(steps),
+               bins = 100) +
+scale_x_continuous(breaks = seq(0, max(activity$steps, na.rm = T), by = 25)) +
+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) +
+labs(title = "Occurence of numbers of steps",
+  subtitle = "(Zeros removed)",
+  x = "number of steps",
+  y = "number of intervals"
+) +
+geom_vline(aes(
+  xintercept = median(zeroless$steps, na.rm = T),
+  color = "Median"),
+    linetype = "dashed"
+) +
+geom_vline(aes(
+  xintercept = mean(zeroless$steps, na.rm = T),
+  color = "Mean"),
+    linetype = "dashed"
+)
+
+# zero-less square root scale
+ggplot(zeroless) +
+geom_histogram(aes(steps),
+               bins = 100) +
+scale_x_sqrt(
+  breaks = c(
+  seq(0, 25, by = 5),
+  seq(50, 400, by = 25),
+  seq(450, max(activity$steps, na.rm = T), by = 50)
+  ),
+  minor_breaks = c(
+  seq(0, 45, by = 5),
+  seq(50, 195, by = 5),
+  seq(200, 480, by = 25),
+  seq(450, max(activity$steps, na.rm = T), by = 25)
+  )
+) +
+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5)) +
+labs(title = "Occurence of numbers of steps by 5-minute interval",
+  subtitle = "(Zeros removed, square root scale)",
+  x = "number of steps",
+  y = "number of intervals"
+) +
+  geom_vline(aes(
+  xintercept = median(zeroless$steps, na.rm = T),
+  color = "Median"),
+    linetype = "dashed"
+) +
+geom_vline(aes(
+  xintercept = mean(zeroless$steps, na.rm = T),
+  color = "Mean"),
+    linetype = "dashed"
+)
 ```
